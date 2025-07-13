@@ -3,10 +3,10 @@
 class UserService {
 
  public static function getUserByUsername($db_handle, $username) {
-  $sql = "SELECT * FROM users WHERE username=:username";
+  $sql = "SELECT username, full_name, email FROM users WHERE username=:username";
   $stmt = $db_handle->prepare($sql);
   $stmt->execute(['username' => $username]);
-  $result = $stmt->fetch(PDO::FETCH_ASSOC);
+  $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   return json_encode($result);
  }
@@ -14,7 +14,7 @@ class UserService {
  public static function register($db_handle, $input) {
   $check_user = self::getUserByUsername($db_handle, $input['username']);
   
-  if (empty($check_user['username'])) {
+  if (count(json_decode($check_user)) === 0) {
    $sql = "INSERT INTO users (username, full_name, email, password) VALUES (:username, :full_name, :email, :password)";
    $stmt = $db_handle->prepare($sql);
    $password = password_hash($input['password'], PASSWORD_BCRYPT, ['cost' => 10]);
@@ -29,13 +29,11 @@ class UserService {
 
    echo json_encode([
     'message' => 'User created successfully',
-    'data' => json_decode($user)
+    'data' => json_decode($user)[0]
    ]);
 
    return true;
   }
-
-  echo $check_user;
 
   throw new Exception('Username already taken');
  }
